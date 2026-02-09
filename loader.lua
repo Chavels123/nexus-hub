@@ -13,7 +13,7 @@ local Config = {
     KeySystemVersion = "V1.0",
     HubName = "Nexus Hub",
     DiscordInvite = "Not availble yet",
-    GetKeyURL = "Not availble yet",
+    GetKeyURL = "https://ads.luarmor.net/get_key?for=Nexus_Hub-vrIKoBUaLTsp",
     
     Colors = {
         Background = Color3.fromRGB(20, 20, 25),
@@ -26,7 +26,7 @@ local Config = {
     },
     
     SupportedGames = {
-        [18199615050] = {Name = "Demonology (Lobby)", Icon = "rbxassetid://6137321701", ScriptId = "c1b36fb2505c5cfb10cd11a28c9355c0"},
+        [18794863104] = {Name = "Demonology (Lobby)", Icon = "rbxassetid://6137321701", ScriptId = "c1b36fb2505c5cfb10cd11a28c9355c0"},
         [18794863104] = {Name = "Demonology (Game)", Icon = "rbxassetid://18199615050", ScriptId = "c1b36fb2505c5cfb10cd11a28c9355c0"},
         [1537690962] = {Name = "Blair", Icon = "rbxassetid://1537690962", ScriptId = "d4f4e1f4b5e1e4c3a6f7b8c9d0e1f2a3"},
     }
@@ -45,6 +45,36 @@ local KeyStats = {
     SuccessRate = 0,
     LastUsed = "Never"
 }
+
+local KEY_SAVE_FILE = "NexusHub/saved_key.txt"
+
+local function SaveKey(key)
+    pcall(function()
+        makefolder("NexusHub")
+        writefile(KEY_SAVE_FILE, key)
+    end)
+end
+
+local function LoadKey()
+    local success, data = pcall(function()
+        if isfile(KEY_SAVE_FILE) then
+            return readfile(KEY_SAVE_FILE)
+        end
+        return nil
+    end)
+    if success and data and data ~= "" then
+        return data
+    end
+    return nil
+end
+
+local function WipeKey()
+    pcall(function()
+        if isfile(KEY_SAVE_FILE) then
+            delfile(KEY_SAVE_FILE)
+        end
+    end)
+end
 
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -1088,6 +1118,7 @@ VerifyButton.MouseButton1Click:Connect(function()
         
         if status.code == "KEY_VALID" then
             SetStatusSuccess("✓ Verified!")
+            SaveKey(key)
             
             KeyStats.TotalKeys = KeyStats.TotalKeys + 1
             KeyStats.SuccessRate = 100
@@ -1149,28 +1180,33 @@ VerifyButton.MouseButton1Click:Connect(function()
             end)
             
         elseif status.code == "KEY_EXPIRED" then
+            WipeKey()
             SetStatusWarning("⚠ Key Expired!")
             KeyStats.TotalKeys = KeyStats.TotalKeys + 1
             StatsText.Text = string.format("Keys: %d | Last: Expired", KeyStats.TotalKeys)
             
         elseif status.code == "KEY_BANNED" then
+            WipeKey()
             SetStatusError("❌ Key Blacklisted!")
             KeyStats.TotalKeys = KeyStats.TotalKeys + 1
             StatsText.Text = string.format("Keys: %d | Last: Banned", KeyStats.TotalKeys)
             
         elseif status.code == "KEY_HWID_LOCKED" then
+            WipeKey()
             SetStatusWarning("⚠ HWID Mismatch!")
             KeyHint.Text = "🔄 Reset HWID via Discord bot"
             KeyStats.TotalKeys = KeyStats.TotalKeys + 1
             StatsText.Text = string.format("Keys: %d | Last: HWID Lock", KeyStats.TotalKeys)
             
         elseif status.code == "KEY_INCORRECT" then
+            WipeKey()
             SetStatusError("❌ Key Not Found!")
             KeyStats.TotalKeys = KeyStats.TotalKeys + 1
             KeyStats.SuccessRate = math.floor((KeyStats.SuccessRate * (KeyStats.TotalKeys - 1)) / KeyStats.TotalKeys)
             StatsText.Text = string.format("Keys: %d | Success: %d%% | Last: Failed", KeyStats.TotalKeys, KeyStats.SuccessRate)
             
         elseif status.code == "KEY_INVALID" then
+            WipeKey()
             SetStatusError("❌ Invalid Format!")
             
         elseif status.code == "INVALID_EXECUTOR" then
@@ -1230,6 +1266,52 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
             else
                 child.Visible = false
             end
+        end
+    end
+end)
+
+-- Auto-load saved key on startup
+task.spawn(function()
+    local savedKey = LoadKey()
+    if savedKey then
+        KeyInput.Text = savedKey
+        SetStatusLoading("Auto-verifying...")
+        
+        if not IsGameSupported then
+            SetStatusError("Game Not Supported!")
+            return
+        end
+        
+        local success, status = pcall(function()
+            return LuarmorAPI.check_key(savedKey)
+        end)
+        
+        if not success then
+            SetStatusError("Connection Error!")
+            return
+        end
+        
+        if status.code == "KEY_VALID" then
+            SetStatusSuccess("Auto-verified!")
+            
+            getgenv().script_key = savedKey
+            
+            task.wait(1)
+            
+            local exitTween = TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                Size = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1
+            })
+            exitTween:Play()
+            exitTween.Completed:Connect(function()
+                ScreenGui:Destroy()
+                LuarmorAPI.load_script()
+            end)
+        else
+            -- Key is no longer valid, wipe it
+            WipeKey()
+            KeyInput.Text = ""
+            SetStatusWarning("Saved key expired")
         end
     end
 end)
