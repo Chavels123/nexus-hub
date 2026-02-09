@@ -26,7 +26,7 @@ local Config = {
     },
     
     SupportedGames = {
-        [18794863104] = {Name = "Demonology (Lobby)", Icon = "rbxassetid://6137321701", ScriptId = "c1b36fb2505c5cfb10cd11a28c9355c0"},
+        [18199615050] = {Name = "Demonology (Lobby)", Icon = "rbxassetid://6137321701", ScriptId = "c1b36fb2505c5cfb10cd11a28c9355c0"},
         [18794863104] = {Name = "Demonology (Game)", Icon = "rbxassetid://18199615050", ScriptId = "c1b36fb2505c5cfb10cd11a28c9355c0"},
         [1537690962] = {Name = "Blair", Icon = "rbxassetid://1537690962", ScriptId = "d4f4e1f4b5e1e4c3a6f7b8c9d0e1f2a3"},
     }
@@ -1270,7 +1270,6 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- Auto-load saved key on startup
 task.spawn(function()
     local savedKey = LoadKey()
     if savedKey then
@@ -1308,7 +1307,6 @@ task.spawn(function()
                 LuarmorAPI.load_script()
             end)
         else
-            -- Key is no longer valid, wipe it
             WipeKey()
             KeyInput.Text = ""
             SetStatusWarning("Saved key expired")
