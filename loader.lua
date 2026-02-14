@@ -31,6 +31,7 @@ local Config = {
         [1537690962] = {Name = "Blair", Icon = "rbxassetid://1537690962", ScriptId = "d4f4e1f4b5e1e4c3a6f7b8c9d0e1f2a3"},
         [131623223084840] = {Name = "Escape Tsunami For Brainrot", Icon = "rbxassetid://1537690962", ScriptId = "4a454737b486e773c71e51ed30a5dac6"},
         [119987266683883] = {Name = "Survive Lava For Brainrots", Icon = "rbxassetid://1537690962", ScriptId = "edd7a397cc001d76c5417df7101a2303"},
+        [134763881293027] = {Name = "Climb For Brainrots", Icon = "rbxassetid://1537690962", ScriptId = "04e9d4476ad5dde4ec898e4cd254e0c9"},
     }
 }
 
