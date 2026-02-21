@@ -34,6 +34,7 @@ local Config = {
         [134951244280326] = {Name = "Climb For Brainrots", Icon = "rbxassetid://1537690962", ScriptId = "04e9d4476ad5dde4ec898e4cd254e0c9"},
         [134763881293027] = {Name = "Steal From Brainrots", Icon = "rbxassetid://1537690962", ScriptId = "d117bc3f276322726c7210be6486900d"},
         [75992362647444] = {Name = "Tap It", Icon = "rbxassetid://1537690962", ScriptId = "ee1527a9632a9200c40524c2edb0b24c"},
+        [90695455422761] = {Name = "Jump To Steal A Brainrot", Icon = "rbxassetid://1537690962", ScriptId = "9d7f7a0161bc3907b797d23d61b43e53"},
     }
 }
 
