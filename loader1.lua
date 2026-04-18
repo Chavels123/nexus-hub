@@ -107,7 +107,7 @@ InputSection:Button({
 	Justify  = "Center",
 	Color    = Config.Colors.Yellow,
 	Callback = function()
-		setclipboard("")
+		setclipboard("https://syscure.vip/get-key/9872b8cc6d984e67c42cac27")
 		Notify("Key Copied", "The key link has been copied to your clipboard.", "solar:check-square-bold", 5)
 	end,
 })
