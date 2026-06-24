@@ -94,6 +94,10 @@ local Config = {
             Name = "Specter [Game]",
             ScriptId = "4f0cec16fca28b001654e6ed27872468",
         },
+		[443406476] = {
+            Name = "Project Lazarus",
+            ScriptId = "de7d2a2d1577b37370b0363faf195845",
+        },
     },
 }
 
