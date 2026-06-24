@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -94,7 +95,7 @@ local Config = {
             Name = "Specter [Game]",
             ScriptId = "4f0cec16fca28b001654e6ed27872468",
         },
-		[443406476] = {
+        [443406476] = {
             Name = "Project Lazarus",
             ScriptId = "de7d2a2d1577b37370b0363faf195845",
         },
@@ -102,6 +103,7 @@ local Config = {
 }
 
 local State = {
+    Destroyed = false,
     EnteredKey = "",
     Busy = false,
     Loaded = false,
@@ -113,6 +115,7 @@ local State = {
     KeyExpiry = "Not authenticated",
     KeyNote = "Not authenticated",
     TotalExecutions = 0,
+    TopMostConnection = nil,
 }
 
 local CurrentGame = Config.SupportedGames[game.PlaceId]
@@ -132,6 +135,113 @@ local function notify(title, content, icon, duration)
         Icon = icon,
         Duration = duration or 4,
     })
+end
+
+local function getCoreGui()
+    local success, coreGui = pcall(function()
+        return game:GetService("CoreGui")
+    end)
+
+    if success then
+        return coreGui
+    end
+
+    return nil
+end
+
+local function isLikelyKeySystemScreenGui(screenGui)
+    if typeof(screenGui) ~= "Instance" or not screenGui:IsA("ScreenGui") then
+        return false
+    end
+
+    local lowerName = screenGui.Name:lower()
+    if lowerName:find("wind", 1, true)
+        or lowerName:find("nexus", 1, true)
+        or lowerName:find("key", 1, true)
+    then
+        return true
+    end
+
+    for _, descendant in ipairs(screenGui:GetDescendants()) do
+        if descendant:IsA("TextLabel")
+            or descendant:IsA("TextButton")
+            or descendant:IsA("TextBox")
+        then
+            local success, text = pcall(function()
+                return descendant.Text
+            end)
+
+            if success and type(text) == "string" then
+                local lowerText = text:lower()
+                if lowerText:find("nexus hub", 1, true)
+                    or lowerText:find("key system", 1, true)
+                    or lowerText:find("luarmor", 1, true)
+                then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+local function applyScreenGuiTopMost(screenGui)
+    if typeof(screenGui) ~= "Instance"
+        or not screenGui:IsA("ScreenGui")
+        or not screenGui.Parent
+    then
+        return false
+    end
+
+    pcall(function()
+        screenGui.DisplayOrder = 2147483647
+    end)
+    pcall(function()
+        screenGui.ResetOnSpawn = false
+    end)
+    pcall(function()
+        screenGui.OnTopOfCoreBlur = true
+    end)
+
+    return true
+end
+
+local function applyKeySystemAlwaysOnTop()
+    local containers = {}
+    local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+    local coreGui = getCoreGui()
+
+    if playerGui then
+        table.insert(containers, playerGui)
+    end
+
+    if coreGui then
+        table.insert(containers, coreGui)
+    end
+
+    local appliedCount = 0
+
+    for _, container in ipairs(containers) do
+        for _, descendant in ipairs(container:GetDescendants()) do
+            if isLikelyKeySystemScreenGui(descendant)
+                and applyScreenGuiTopMost(descendant)
+            then
+                appliedCount = appliedCount + 1
+            end
+        end
+    end
+
+    return appliedCount
+end
+
+local function stopKeySystemAlwaysOnTop()
+    State.Destroyed = true
+
+    if State.TopMostConnection then
+        State.TopMostConnection:Disconnect()
+        State.TopMostConnection = nil
+    end
 end
 
 local function canReadFiles()
@@ -341,6 +451,30 @@ Window:Tag({
     Color = CurrentGame and Config.Colors.Green or Config.Colors.Red,
     Border = true,
 })
+
+do
+    local lastTopMostApply = 0
+
+    State.TopMostConnection = RunService.RenderStepped:Connect(function()
+        if State.Destroyed then
+            return
+        end
+
+        local now = os.clock()
+        if now - lastTopMostApply < 0.25 then
+            return
+        end
+
+        lastTopMostApply = now
+        applyKeySystemAlwaysOnTop()
+    end)
+end
+
+task.defer(applyKeySystemAlwaysOnTop)
+
+pcall(function()
+    Window:OnDestroy(stopKeySystemAlwaysOnTop)
+end)
 
 local AuthenticationSection = Window:Section({
     Title = "Authentication",
@@ -564,6 +698,8 @@ local function loadAuthenticatedScript(key)
     )
 
     task.delay(0.6, function()
+        stopKeySystemAlwaysOnTop()
+
         pcall(function()
             Window:Destroy()
         end)
